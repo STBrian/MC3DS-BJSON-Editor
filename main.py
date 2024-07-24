@@ -180,7 +180,7 @@ class App(tkinter.Tk):
         self.valueEntry = tkinter.ttk.Entry(self.propertiesFrame, textvariable=self.valueStringVar, state="readonly")
         self.valueEntry.grid(row=2, column=1, sticky="we", padx=5, pady=5)
 
-        self.saveButton = tkinter.ttk.Button(self.propertiesFrame, state="disabled", text="Save", command=self.registerChange)
+        self.saveButton = tkinter.ttk.Button(self.propertiesFrame, state="disabled", text="Ok", command=self.registerChange)
         self.saveButton.grid(row=3, column=0, columnspan=2)
 
         self.tree = ttk.Treeview(self, show='tree', selectmode="browse")
