@@ -93,6 +93,7 @@ def loadTreeviewFromBjson(root, tree: ttk.Treeview, fp: str|Path):
         tree.icons["textLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/text.png"))
         tree.icons["numberLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/number.png"))
         tree.icons["booleanLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/boolean.png"))
+        tree.icons["nullLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/null.png"))
     setIcons(tree, tree.icons)
 
     loading_label.grid_remove()
@@ -113,6 +114,8 @@ def setIcons(tree: ttk.Treeview, icons: dict, parent=""):
             tree.item(child, image=icons["numberLogo"])
         elif values[0] == "Boolean":
             tree.item(child, image=icons["booleanLogo"])
+        elif values[0] == "null":
+            tree.item(child, image=icons["nullLogo"])
         else:
             print(f"Not match: {values[0]}")
         setIcons(tree, icons, child)

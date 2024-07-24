@@ -64,6 +64,7 @@ def convertBjsonToJson(fp: str|Path):
         idx = i * 3 + 1
         type_extracted = int.from_bytes(extract_chunk(data_bytes, idx), "little", signed=False)
         if type_extracted == 6:
+            # Object data type
             if json_dict == None:
                 json_dict = {}
                 tmp = []
@@ -128,6 +129,7 @@ def convertBjsonToJson(fp: str|Path):
                 hash_database.addToDatabase(text_decode, hashlist)
             tmp[3] += 1
         elif type_extracted == 4:
+            # Array data type
             if json_dict == None:
                 json_dict = []
                 tmp = []
@@ -152,6 +154,7 @@ def convertBjsonToJson(fp: str|Path):
                 if tmp[3] >= tmp[2]:
                     place_dir.pop(-2)
         elif type_extracted == 3:
+            # Float data type
             tmp = place_dir[-1]
             dir = tmp[0]
             if tmp[1] == "array":
@@ -163,6 +166,7 @@ def convertBjsonToJson(fp: str|Path):
                 dir.append(float("{:.2f}".format(float_num)))
             tmp[3] += 1
         elif type_extracted == 2:
+            # Integer data type
             tmp = place_dir[-1]
             dir = tmp[0]
             if tmp[1] == "array":
@@ -172,6 +176,7 @@ def convertBjsonToJson(fp: str|Path):
                 dir.append(bytes_to_int(extract_chunk(data_bytes, idx + 1), "little"))
             tmp[3] += 1
         elif type_extracted == 1:
+            # Boolean data type
             tmp = place_dir[-1]
             dir = tmp[0]
             if tmp[1] == "array":
@@ -187,6 +192,16 @@ def convertBjsonToJson(fp: str|Path):
                     dir.append(False)
                 elif bool_num == 1:
                     dir.append(True)
+            tmp[3] += 1
+        elif type_extracted == 0:
+            # None data type
+            tmp = place_dir[-1]
+            dir = tmp[0]
+            if tmp[1] == "array":
+                # With header
+                dir[f"{headers[i-1]}"] = None
+            elif tmp[1] == "list":
+                dir.append(None)
             tmp[3] += 1
 
         if len(place_dir) > 0:
