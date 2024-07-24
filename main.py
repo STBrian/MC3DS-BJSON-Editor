@@ -183,8 +183,8 @@ class App(tkinter.Tk):
         self.saveButton = tkinter.ttk.Button(self.propertiesFrame, state="disabled", text="Save", command=self.registerChange)
         self.saveButton.grid(row=3, column=0, columnspan=2)
 
-        self.tree = ttk.Treeview(self, show='tree')
-        self.tree.bind('<<TreeviewSelect>>', self.item_selected)
+        self.tree = ttk.Treeview(self, show='tree', selectmode="browse")
+        self.tree.bind('<<TreeviewSelect>>', self.itemSelected)
         self.scrollbar = tkinter.Scrollbar(self, orient=tkinter.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.scrollbar.set)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
@@ -258,7 +258,7 @@ class App(tkinter.Tk):
             if outputPath != "":
                 with open(outputPath, "wb") as f:
                     f.write(bytearray(fileContent))
-                self.clear_treeview()
+                self.clearTreeview()
                 self.tree.grid_remove()
                 outPath = Path(outputPath)
                 threading.Thread(target=partial(loadTreeviewFromBjson, self, self.tree, outputPath)).start()
@@ -277,7 +277,7 @@ class App(tkinter.Tk):
             inputFp = tkinter.filedialog.askopenfilename(filetypes=[("BJSON Files", ".bjson")])
             inputPath = Path(inputFp)
             if inputFp != "":
-                self.clear_treeview()
+                self.clearTreeview()
                 self.tree.grid_remove()
                 threading.Thread(target=partial(loadTreeviewFromBjson, self, self.tree, inputFp)).start()
                 self.valueEntry.configure(state="readonly")
@@ -291,11 +291,11 @@ class App(tkinter.Tk):
                 self.filePath = inputFp
                 self.saved = True
 
-    def clear_treeview(self):
+    def clearTreeview(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-    def item_selected(self, event):
+    def itemSelected(self, event):
         for selected_item in self.tree.selection():
             item = self.tree.item(selected_item)
             record = item['values']
