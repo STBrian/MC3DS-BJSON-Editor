@@ -79,25 +79,30 @@ def populate_tree(tree: ttk.Treeview, data: dict|list):
     elif type(data) == list:
         count = addListToTree(tree, "", "root", data, count)
 
-def loadTreeviewFromBjson(root, tree: ttk.Treeview, fp: str|Path):
+def loadFileDataFromBjson(root, tree: ttk.Treeview, fp: str|Path):
     loading_label = tkinter.Label(root, text="Loading file...")
     loading_label.grid(row=0, column=0)
-    json_str = getBjsonContent(fp)
-    bjson_dict = json.loads(json_str)
+    try:
+        json_str = getBjsonContent(fp)
+        bjson_dict = json.loads(json_str)
 
-    populate_tree(tree, bjson_dict)
-    if not hasattr(tree, 'icons'):
-        tree.icons = {}
-        tree.icons["objectLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/object.png"))
-        tree.icons["arrayLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/array.png"))
-        tree.icons["textLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/text.png"))
-        tree.icons["numberLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/number.png"))
-        tree.icons["booleanLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/boolean.png"))
-        tree.icons["nullLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/null.png"))
-    setIcons(tree, tree.icons)
+        populate_tree(tree, bjson_dict)
+        if not hasattr(tree, 'icons'):
+            tree.icons = {}
+            tree.icons["objectLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/object.png"))
+            tree.icons["arrayLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/array.png"))
+            tree.icons["textLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/text.png"))
+            tree.icons["numberLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/number.png"))
+            tree.icons["booleanLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/boolean.png"))
+            tree.icons["nullLogo"] = tkinter.PhotoImage(file=os.path.join(root.app_path, "assets/null.png"))
+        setIcons(tree, tree.icons)
+        tree.grid(row=0, column=0, sticky="wesn")
+        inputPath = Path(fp)
+        root.title(f"MC3DS BJSON Editor - {inputPath.name}")
+    except:
+        pass
 
     loading_label.grid_remove()
-    tree.grid(row=0, column=0, sticky="wesn")
 
 def setIcons(tree: ttk.Treeview, icons: dict, parent=""):
     children = tree.get_children(parent)
@@ -195,9 +200,7 @@ class App(tkinter.Tk):
         self.actualIndex = None
 
         if fp != None:
-            threading.Thread(target=partial(loadTreeviewFromBjson, self, self.tree, fp)).start()
-            inputPath = Path(fp)
-            self.title(f"MC3DS BJSON Editor - {inputPath.name}")
+            threading.Thread(target=partial(loadFileDataFromBjson, self, self.tree, fp)).start()
 
         self.saved = True
 
@@ -260,12 +263,10 @@ class App(tkinter.Tk):
                     f.write(bytearray(fileContent))
                 self.clearTreeview()
                 self.tree.grid_remove()
-                outPath = Path(outputPath)
-                threading.Thread(target=partial(loadTreeviewFromBjson, self, self.tree, outputPath)).start()
+                threading.Thread(target=partial(loadFileDataFromBjson, self, self.tree, outputPath)).start()
                 self.valueEntry.configure(state="readonly")
                 self.valueStringVar.set("")
                 self.dataTypeStringVar.set("")
-                self.title(f"MC3DS BJSON Editor - {outPath.name}")
                 self.lastValue = None
                 self.changes = []
                 self.actualIndex = None
@@ -275,16 +276,14 @@ class App(tkinter.Tk):
     def openFile(self):
         if self.askForChanges():
             inputFp = tkinter.filedialog.askopenfilename(filetypes=[("BJSON Files", ".bjson")])
-            inputPath = Path(inputFp)
             if inputFp != "":
                 self.clearTreeview()
                 self.tree.grid_remove()
-                threading.Thread(target=partial(loadTreeviewFromBjson, self, self.tree, inputFp)).start()
+                threading.Thread(target=partial(loadFileDataFromBjson, self, self.tree, inputFp)).start()
                 self.valueEntry.configure(state="readonly")
                 self.valueStringVar.set("")
                 self.dataTypeStringVar.set("")
                 self.saveButton.configure(state="disabled")
-                self.title(f"MC3DS BJSON Editor - {inputPath.name}")
                 self.lastValue = None
                 self.changes = []
                 self.actualIndex = None
