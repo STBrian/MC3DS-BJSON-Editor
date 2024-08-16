@@ -4,15 +4,15 @@ from pathlib import Path
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.ttk
-import bjson
+from pyBjson import convertBjsonToJson
 import json
 import threading
 from functools import partial
-import sys, os, argparse, traceback
-from bjson.conversions import *
+import sys, os, argparse
+from pyBjson.conversions import uint_to_bytes, int_to_bytes, float_to_bytes
 
 def getBjsonContent(fp: str|Path):
-    return bjson.convertBjsonToJson(fp)
+    return convertBjsonToJson(fp)
 
 def addDictToTree(tree: ttk.Treeview, root: str, key: str, data: dict, count: int):
     if root == "":

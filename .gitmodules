@@ -1,0 +1,3 @@
+[submodule "pyBjson"]
+	path = pyBjson
+	url = https://github.com/STBrian/pyBjson.git
