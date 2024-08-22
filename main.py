@@ -9,7 +9,7 @@ import json
 import threading
 from functools import partial
 import sys, os, argparse
-from modules.pyBjson.conversions import uint_to_bytes, int_to_bytes, float_to_bytes
+from modules.pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
 
 def getBjsonContent(fp: str|Path):
     return convertBjsonToJson(fp)
