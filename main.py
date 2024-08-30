@@ -11,6 +11,8 @@ from functools import partial
 import sys, os, argparse
 from modules.pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
 
+VERSION = "v1.0.2-dev"
+
 def getBjsonContent(fp: str|Path):
     try:
         data = convertBjsonToJson(fp)
@@ -170,6 +172,11 @@ class App(tkinter.Tk):
         file_menu.add_command(label="Exit", command=self.closeApp)
 
         menubar.add_cascade(label="File", menu=file_menu, underline=0)
+
+        help_menu = tkinter.Menu(menubar, tearoff=False)
+        help_menu.add_command(label="About", command=self.showAbout)
+
+        menubar.add_cascade(label="Help", menu=help_menu, underline=0)
         # -------------------------------
 
         self.propertiesFrame = tkinter.Frame(self)
@@ -364,6 +371,10 @@ class App(tkinter.Tk):
                 return True
             else:
                 return False
+            
+    def showAbout(self):
+        about_text = f"MC3DS BJSON Editor\nVersion {VERSION}\n\nMade by: STBrian\nGitHub: https://github.com/STBrian"
+        tkinter.messagebox.showinfo("About", about_text)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A MC3DS BJSON Editor')
