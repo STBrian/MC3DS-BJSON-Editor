@@ -12,7 +12,11 @@ import sys, os, argparse
 from modules.pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
 
 def getBjsonContent(fp: str|Path):
-    return convertBjsonToJson(fp)
+    try:
+        data = convertBjsonToJson(fp)
+    except Exception as e:
+        tkinter.messagebox.showerror("Unable to load file", f"Could not open the specified file. Error: {e}")
+    return data
 
 def addDictToTree(tree: ttk.Treeview, root: str, key: str, data: dict, count: int):
     if root == "":
@@ -84,6 +88,10 @@ def loadFileDataFromBjson(root, tree: ttk.Treeview, fp: str|Path):
     loading_label.grid(row=0, column=0)
     try:
         json_str = getBjsonContent(fp)
+        if json_str == None:
+            tkinter.messagebox.showerror("Unable to load file", "The file could not be loaded. The format may be incorrect or unsupported.")
+            loading_label.grid_remove()
+            return
         bjson_dict = json.loads(json_str)
 
         populate_tree(tree, bjson_dict)
