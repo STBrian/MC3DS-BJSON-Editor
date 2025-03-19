@@ -4,12 +4,12 @@ from pathlib import Path
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.ttk
-from modules.pyBjson import convertBjsonToJson
+from pyBjson import convertBjsonToJson
 import json
 import threading
 from functools import partial
 import sys, os, argparse
-from modules.pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
+from pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
 
 VERSION = "v1.0.2-dev"
 
