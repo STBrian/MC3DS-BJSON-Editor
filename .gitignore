@@ -1,3 +1,4 @@
 /dist
 /build
 /bjson/__pycache__
+/hash_database.json
