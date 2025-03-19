@@ -1,17 +1,22 @@
 import tkinter
+import base64
 from tkinter import ttk
 from pathlib import Path
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.ttk
-from pyBjson import convertBjsonToJson
-import json
+from pyBjson import BJSONFile
 import threading
 from functools import partial
 import sys, os, argparse
-from pyBjson.utils import uint_to_bytes, int_to_bytes, float_to_bytes
 
-VERSION = "v1.0.2-dev"
+VERSION = "v1.1.0"
+
+def encode_key64(key: str):
+    return base64.urlsafe_b64encode(key.encode("utf-8")).decode("utf-8")
+
+def decode_key64(key: str):
+    return base64.urlsafe_b64decode(key.encode("utf-8")).decode("utf-8")
 
 def getBjsonContent(fp: str|Path):
     try:
@@ -20,55 +25,57 @@ def getBjsonContent(fp: str|Path):
         tkinter.messagebox.showerror("Unable to load file", f"Could not open the specified file. Error: {e}")
     return data
 
-def addDictToTree(tree: ttk.Treeview, root: str, key: str, data: dict):
+def addDictToTree(tree: ttk.Treeview, root: str, key: str, data: dict, path: str):
     if root == "":
         opened = True
+        path = "root"
     else:
         opened = False
-    sub_node = tree.insert(root, "end", text=key, open=opened, values=["Object"])
+    sub_node = tree.insert(root, "end", text=key, open=opened, values=["Object"], iid=path)
     for key in data:
         if type(data[key]) == dict:
-            addDictToTree(tree, sub_node, key, data[key])
+            addDictToTree(tree, sub_node, key, data[key], f"{path}/{encode_key64(key)}")
         elif type(data[key]) == list:
-            addListToTree(tree, sub_node, key, data[key])
+            addListToTree(tree, sub_node, key, data[key], f"{path}/{encode_key64(key)}")
         else:
-            addSingleElementToTree(tree, sub_node, key, data[key])
+            addSingleElementToTree(tree, sub_node, key, data[key], f"{path}/{encode_key64(key)}")
 
-def addListToTree(tree: ttk.Treeview, root: str, key: str, data: list):
+def addListToTree(tree: ttk.Treeview, root: str, key: str, data: list, path: str):
     if root == "":
         opened = True
+        path = "root"
     else:
         opened = False
-    sub_node = tree.insert(root, "end", text=key, open=opened, values=["Array"])
-    for element in data:
+    sub_node = tree.insert(root, "end", text=key, open=opened, values=["Array"], iid=path)
+    for idx, element in enumerate(data):
         if type(element) == dict:
-            addDictToTree(tree, sub_node, "Object", element)
+            addDictToTree(tree, sub_node, "Object", element, f"{path}/{idx}")
         elif type(element) == list:
-            addListToTree(tree, sub_node, "Array", element)
+            addListToTree(tree, sub_node, "Array", element, f"{path}/{idx}")
         elif type(element) == int or type(element) == float:
-            addSingleElementToTree(tree, sub_node, "Number", element)
+            addSingleElementToTree(tree, sub_node, "Number", element, f"{path}/{idx}")
         elif type(element) == str:
-            addSingleElementToTree(tree, sub_node, "String", element)
+            addSingleElementToTree(tree, sub_node, "String", element, f"{path}/{idx}")
         elif type(element) == bool:
-            addSingleElementToTree(tree, sub_node, "Boolean", element)
+            addSingleElementToTree(tree, sub_node, "Boolean", element, f"{path}/{idx}")
         else:
-            addSingleElementToTree(tree, sub_node, "null", None)
+            addSingleElementToTree(tree, sub_node, "null", None, f"{path}/{idx}")
 
-def addSingleElementToTree(tree: ttk.Treeview, root: str, key: str, data):
+def addSingleElementToTree(tree: ttk.Treeview, root: str, key: str, data, path: str):
     if type(data) == int or type(data) == float:
-        tree.insert(root, "end", text=key, values=["Number", data])
+        tree.insert(root, "end", text=key, values=["Number", data], iid=path)
     elif type(data) == str:
-        tree.insert(root, "end", text=key, values=["String", data])
+        tree.insert(root, "end", text=key, values=["String", data], iid=path)
     elif type(data) == bool:
-        tree.insert(root, "end", text=key, values=["Boolean", data])
+        tree.insert(root, "end", text=key, values=["Boolean", data], iid=path)
     else:
-        tree.insert(root, "end", text=key, values=["null", "null"])
+        tree.insert(root, "end", text=key, values=["null", "null"], iid=path)
     
 def populate_tree(tree: ttk.Treeview, data: dict|list):
     if type(data) == dict:
-        addDictToTree(tree, "", "root", data)
+        addDictToTree(tree, "", "root", data, "")
     elif type(data) == list:
-        addListToTree(tree, "", "root", data)
+        addListToTree(tree, "", "root", data, "")
 
 def loadFileDataFromBjson(root, tree: ttk.Treeview, fp: str|Path):
     loading_label = tkinter.Label(root, text="Loading file...")
@@ -77,6 +84,7 @@ def loadFileDataFromBjson(root, tree: ttk.Treeview, fp: str|Path):
         bjson_dict = getBjsonContent(fp)
 
         if bjson_dict:
+            print("Populating tree")
             populate_tree(tree, bjson_dict)
             if not hasattr(tree, 'icons'):
                 tree.icons = {}
@@ -90,6 +98,7 @@ def loadFileDataFromBjson(root, tree: ttk.Treeview, fp: str|Path):
             tree.grid(row=0, column=0, sticky="wesn")
             inputPath = Path(fp)
             root.title(f"MC3DS BJSON Editor - {inputPath.name}")
+        root.bjson_dict = bjson_dict
     except:
         pass
 
@@ -193,6 +202,7 @@ class App(tkinter.Tk):
         self.lastValue = None
         self.filePath = fp
         self.selectedItem = None
+        self.bjson_dict : dict | list
 
         if fp != None:
             threading.Thread(target=partial(loadFileDataFromBjson, self, self.tree, fp)).start()
@@ -220,15 +230,30 @@ class App(tkinter.Tk):
             if (type(newValue) == type(self.lastValue)) or ((type(newValue) == int or type(newValue) == float) and dataType == "Number"):
                 if self.selectedItem:
                     self.tree.item(self.selectedItem, values=[dataType, newValue])
-                    print("Change registered")
-                    self.saved = False
+                    keys = self.selectedItem.split("/")
+                    if len(keys) > 1:
+                        d = self.bjson_dict
+                        for key in keys[1:-1]:
+                            if type(d) == dict:
+                                d = d[decode_key64(key)]
+                            elif type(d) == list:
+                                d = d[int(key)]
+                        if dataType == "Boolean":
+                            newValue = True if newValue == "true" else False
+                        if type(d) == dict:
+                            d[decode_key64(keys[-1])] = newValue
+                        elif type(d) == list:
+                            d[int(keys[-1])] = newValue
+                        print("Change registered")
+                        self.saved = False
             else:
                 tkinter.messagebox.showwarning(title="Invalid value", message="The value entered is not valid for this instance")
 
     def saveChanges(self):
         if type(self.filePath) == str:
             # TODO: Convert treeview to json
-            fileContent = []
+            bjsonNewData = BJSONFile().fromPython(self.bjson_dict)
+            fileContent = bjsonNewData.getData()
             outputPath = tkinter.filedialog.asksaveasfilename(defaultextension=".bjson", filetypes=[("BJSON Files", ".bjson")])
             if outputPath != "":
                 with open(outputPath, "wb") as f:
@@ -267,19 +292,35 @@ class App(tkinter.Tk):
             item = self.tree.item(selected_item)
             self.selectedItem = selected_item
             record = item['values']
+            itemType = record[0]
+            # Search stored value
+            keys = self.selectedItem.split("/")
+            if len(keys) > 1:
+                d = self.bjson_dict
+
+                for key in keys[1:-1]:
+                    if (type(d) == dict):
+                        d = d[decode_key64(key)]
+                    elif (type(d) == list):
+                        d = d[int(key)]
+                if (type(d) == dict):
+                    itemValue = d[decode_key64(keys[-1])]
+                elif (type(d) == list):
+                    itemValue = d[int(keys[-1])]
+
             self.dataTypeStringVar.set(record[0])
             if len(record) > 1:
-                if record[0] != "Boolean":
-                    self.valueStringVar.set(record[1])
-                    self.lastValue = record[1]
+                if itemType != "Boolean":
+                    self.valueStringVar.set(str(itemValue))
+                    self.lastValue = itemValue
                 else:
-                    if record[2] == True:
+                    if itemValue == True:
                         self.valueStringVar.set("true")
                         self.lastValue = "true"
                     else:
                         self.valueStringVar.set("false")
                         self.lastValue = "false"
-                if record[0] != "String" and record[0] != "null":
+                if itemType != "null":
                     self.valueEntry.configure(state="normal")
                     self.saveButton.configure(state="normal")
                 else:
